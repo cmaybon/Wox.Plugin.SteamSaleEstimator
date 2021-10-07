@@ -40,7 +40,7 @@ BOXLEITER_RATIOS_BY_YEAR = {
 }
 
 
-class SteamSalesEstimator(Wox):
+class SteamSalesEstimator: #(Wox):
     BASE_URL = "https://store.steampowered.com/api"
     EXAMPLE_URL = "https://store.steampowered.com/app/837470/Untitled_Goose_Game"
 
@@ -48,6 +48,7 @@ class SteamSalesEstimator(Wox):
         super().__init__()
         self.currency = None
         self.game_title = None
+        self.sales_count = None
 
     def query(self, query: str):
         if len(query) == 0:
@@ -68,11 +69,11 @@ class SteamSalesEstimator(Wox):
         estimate_revenue_range = self.estimate_sales_net_revenue_range_from_url(query)
         estimate_median = statistics.median(estimate_revenue_range)
         return [{
-            "Title": f"The estimated best guess net revenue for \"{self.game_title}\" is "
+            "Title": f"Estimated best guess net revenue for \"{self.game_title}\" is "
                      f"{self.prettify_currency(estimate_median)} ({self.currency})",
             "IcoPath": "Images\\steames.png",
             "Subtitle": f"Estimated range: {self.prettify_currency(estimate_revenue_range[0])} to "
-                        f"{self.prettify_currency(estimate_revenue_range[1])}"
+                        f"{self.prettify_currency(estimate_revenue_range[1])} with ~{self.sales_count:n} copies sold"
         }]
 
     def estimate_sales_net_revenue_range_from_url(self, url: str):
@@ -85,6 +86,7 @@ class SteamSalesEstimator(Wox):
 
         sales_estimates = self.calculate_estimated_sales(key_data["review_count"], key_data["release_datetime"])
         sales_best_guess = sales_estimates[1]
+        self.sales_count = sales_best_guess
         return self.calculate_estimated_revenue_range(sales_best_guess, key_data["price"])
 
     def get_app_info(self, app_id):
