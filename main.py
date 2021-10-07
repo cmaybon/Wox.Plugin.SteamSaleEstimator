@@ -57,10 +57,13 @@ class SteamSalesEstimator(Wox):
         super().__init__()
 
     def load_data(self):
-        with open("data.json", "r") as file:
-            data = json.load(file)
+        try:
+            with open("data.json", "r") as file:
+                data = json.load(file)
+        except Exception:
+            data = dict()
         self.language_code = data.get("language_code", "en")
-        self.currency_code = data.get("currency_code", "us")
+        self.currency_code = data.get("currency_code", "aud")
 
     def query(self, query: str):
         if len(query) == 0:
