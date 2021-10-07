@@ -40,7 +40,7 @@ BOXLEITER_RATIOS_BY_YEAR = {
 }
 
 
-class SteamSalesEstimator: #(Wox):
+class SteamSalesEstimator(Wox):
     BASE_URL = "https://store.steampowered.com/api"
     EXAMPLE_URL = "https://store.steampowered.com/app/837470/Untitled_Goose_Game"
 
