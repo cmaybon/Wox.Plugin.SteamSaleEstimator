@@ -1,0 +1,11 @@
+{
+  "ID":"EC809D68484F4EDEB6D45658D4F1E8B5",
+  "ActionKeyword":"steames",
+  "Name":"SteamSaleEstimator",
+  "Description":"Estimates the revenue of a game using the New Boxleiter ratios.",
+  "Author":"cmaybon",
+  "Version":"1.0.0",
+  "Language":"python",
+  "IcoPath": "Images\\steames.png",
+  "ExecuteFileName":"main.py"
+}
