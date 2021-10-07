@@ -18,12 +18,6 @@ The "best guess" number is the median of the above range.
 
 ---
 
-### Installation
-
-1. Install `requests` with `pip install requests`
-
----
-
 ### Requirements
 Python packages:
 * requests
