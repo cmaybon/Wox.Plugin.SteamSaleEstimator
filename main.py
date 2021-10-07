@@ -3,12 +3,13 @@ from datetime import datetime
 import statistics
 import re
 import locale
+import json
 
 import requests
 
 from wox import Wox
 
-locale.setlocale(locale.LC_ALL, locale.getdefaultlocale()[0])
+locale.setlocale(locale.LC_ALL, "")
 
 
 BOXLEITER_RATIOS_BY_YEAR = {
@@ -46,9 +47,19 @@ class SteamSalesEstimator(Wox):
 
     def __init__(self):
         super().__init__()
+        self.language_code = None
+        self.currency_code = None
         self.currency = None
         self.game_title = None
         self.sales_count = None
+
+        self.load_data()
+
+    def load_data(self):
+        with open("data.json", "r") as file:
+            data = json.load(file)
+        self.language_code = data.get("language_code", "en")
+        self.currency_code = data.get("currency_code", "us")
 
     def query(self, query: str):
         if len(query) == 0:
@@ -91,7 +102,9 @@ class SteamSalesEstimator(Wox):
 
     def get_app_info(self, app_id):
         response = requests.get(f"{SteamSalesEstimator.BASE_URL}/appdetails", params={
-            "appids": app_id
+            "appids": app_id,
+            "l": self.language_code,
+            "cc": self.currency_code
         })
         return response.json()[str(app_id)]
 

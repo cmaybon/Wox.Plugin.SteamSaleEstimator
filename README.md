@@ -1,5 +1,7 @@
 # SteamSaleEstimator
 Used to estimate the net revenue of a Steam title.
+> After install you should navigate to the plugin install directory and change `data.json` to reflect the localisation you want.  
+> Default language is `en`, default currency is `us`.
 
 ## Example usage:
 `steames https://store.steampowered.com/app/892970/Valheim/`
