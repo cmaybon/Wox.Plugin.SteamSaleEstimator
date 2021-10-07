@@ -46,7 +46,6 @@ class SteamSalesEstimator(Wox):
     EXAMPLE_URL = "https://store.steampowered.com/app/837470/Untitled_Goose_Game"
 
     def __init__(self):
-        super().__init__()
         self.language_code = None
         self.currency_code = None
         self.currency = None
@@ -54,6 +53,8 @@ class SteamSalesEstimator(Wox):
         self.sales_count = None
 
         self.load_data()
+        # Must call super last as in the Wox constructor it actually executes the query
+        super().__init__()
 
     def load_data(self):
         with open("data.json", "r") as file:
@@ -144,3 +145,7 @@ class SteamSalesEstimator(Wox):
 
     def prettify_currency(self, amount: float) -> str:
         return locale.currency(amount, symbol=True, grouping=True)
+
+
+if __name__ == '__main__':
+    SteamSalesEstimator()

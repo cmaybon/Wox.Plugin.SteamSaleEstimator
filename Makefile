@@ -11,6 +11,7 @@ copy_plugin:
 	copy "${RootPath}\Images" "${PluginDirectory}\Images"
 	copy "${RootPath}\main.py" "${PluginDirectory}"
 	copy "${RootPath}\plugin.json" "${PluginDirectory}"
+	copy "${RootPath}\data.json" "${PluginDirectory}"
 	@echo Done
 
 
@@ -22,6 +23,7 @@ zip:
 	copy "${RootPath}\Images" "${BuildTempDirectory}\Images"
 	copy "${RootPath}\main.py" "${BuildTempDirectory}"
 	copy "${RootPath}\plugin.json" "${BuildTempDirectory}"
+	copy "${RootPath}\data.json" "${BuildTempDirectory}"
 	tar -caf "${PluginName}_v${version}.zip" --directory="${BuildDirectory}" "${PluginName}"
 	rmdir /q /s "${BuildDirectory}"
 	@echo Done
