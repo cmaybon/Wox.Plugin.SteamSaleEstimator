@@ -41,6 +41,10 @@ BOXLEITER_RATIOS_BY_YEAR = {
 }
 
 
+class NotEnoughReviewsError(Exception):
+    """ Raised when there is not enough reviews on a game to get review data. """
+
+
 class SteamSalesEstimator(Wox):
     BASE_URL = "https://store.steampowered.com/api"
     EXAMPLE_URL = "https://store.steampowered.com/app/837470/Untitled_Goose_Game"
@@ -73,7 +77,22 @@ class SteamSalesEstimator(Wox):
                 "Subtitle": f"For example \"{SteamSalesEstimator.EXAMPLE_URL}\""
             }]
 
-        is_valid_url = bool(re.match(r"https://store\.steampowered\.com/app/[0-9]*/.*", query))
+        query_split = query.split()
+        query_url = None
+        manual_review_count = None
+        if len(query_split) >= 2:
+            query_url = query_split[0]
+            try:
+                manual_review_count = int(query_split[1])
+            except ValueError:
+                return [{
+                    "Title": "The manual review count must be a number.",
+                    "IcoPath": "Images\\steames_invalid.png"
+                }]
+        elif len(query_split) == 1:
+            query_url = query
+
+        is_valid_url = bool(re.match(r"https://store\.steampowered\.com/app/[0-9]*/.*", query_url))
         if not is_valid_url:
             return [{
                 "Title": "Invalid URL given.",
@@ -81,7 +100,15 @@ class SteamSalesEstimator(Wox):
                 "Subtitle": f"The URL must be in the format: \"{SteamSalesEstimator.EXAMPLE_URL}\""
             }]
 
-        estimate_revenue_range = self.estimate_sales_net_revenue_range_from_url(query)
+        try:
+            estimate_revenue_range = self.estimate_sales_net_revenue_range_from_url(query, manual_review_count)
+        except NotEnoughReviewsError:
+            return [{
+                "Title": "There are not enough reviews for this game. Enter the review count manually after the url.",
+                "IcoPath": "Images\\steames_invalid.png",
+                "Subtitle": "For example \"https://store.steampowered.com/app/112812/Game_Name/ 19\""
+            }]
+
         estimate_median = statistics.median(estimate_revenue_range)
         return [{
             "Title": f"Estimated best guess net revenue for \"{self.game_title}\" is "
@@ -91,11 +118,16 @@ class SteamSalesEstimator(Wox):
                         f"{self.prettify_currency(estimate_revenue_range[1])} with ~{self.sales_count:n} copies sold"
         }]
 
-    def estimate_sales_net_revenue_range_from_url(self, url: str):
-        return self.estimate_sales_net_revenue_range(url.split("/app/")[1].split("/")[0])
+    def estimate_sales_net_revenue_range_from_url(self, url: str, review_count_override: int = None):
+        return self.estimate_sales_net_revenue_range(url.split("/app/")[1].split("/")[0], review_count_override)
 
-    def estimate_sales_net_revenue_range(self, app_id):
+    def estimate_sales_net_revenue_range(self, app_id, review_count_override: int = None):
         key_data = self.get_key_data(self.get_app_info(app_id))
+        if key_data.get("review_count") is None and review_count_override is None:
+            raise NotEnoughReviewsError("There are not enough reviews for this game to get review data.")
+        if review_count_override:
+            key_data["review_count"] = review_count_override
+
         self.currency = key_data["currency"]
         self.game_title = key_data["name"]
 
@@ -113,16 +145,24 @@ class SteamSalesEstimator(Wox):
         return response.json()[str(app_id)]
 
     def get_key_data(self, app_info: dict):
+        review_count = None
+        try:
+            review_count = app_info["data"]["recommendations"]["total"]
+        except KeyError:
+            pass
+
         # Note this is un-localised date, so it is USA time.
         raw_date_string = app_info["data"]["release_date"]["date"]
-        return {
+        data = {
             "release_datetime": datetime.strptime(raw_date_string, "%d %b, %Y"),
-            "review_count": app_info["data"]["recommendations"]["total"],
             "name": app_info["data"]["name"],
             # Given in cents, convert to dollars
             "price": app_info["data"]["price_overview"]["final"] / 100,
             "currency": app_info["data"]["price_overview"]["currency"]
         }
+        if review_count:
+            data["review_count"] = review_count
+        return data
 
     def calculate_estimated_sales(self, review_count: int, release_datetime: datetime):
         if release_datetime.year < 2014:
