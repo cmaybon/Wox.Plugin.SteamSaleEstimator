@@ -104,9 +104,18 @@ class SteamSalesEstimator(Wox):
             estimate_revenue_range = self.estimate_sales_net_revenue_range_from_url(query, manual_review_count)
         except NotEnoughReviewsError:
             return [{
-                "Title": "There are not enough reviews for this game. Enter the review count manually after the url.",
+                "Title": "There are not enough reviews for this game or it is free. Enter the review count after "
+                         "the url.",
                 "IcoPath": "Images\\steames_invalid.png",
                 "Subtitle": "For example \"https://store.steampowered.com/app/112812/Game_Name/ 19\""
+            }]
+        if estimate_revenue_range is None:
+            return [{
+                "Title": f"Cannot estimate revenue as the game is free. The approximate copies installed is "
+                         f"~{self.sales_count:n}.",
+                "IcoPath": "Images\\steames.png",
+                "Subtitle": "Revenue estimates are based off of the games sale price, so free games cannot be "
+                            "estimated. Note free games may be very inaccurate."
             }]
 
         estimate_median = statistics.median(estimate_revenue_range)
@@ -128,12 +137,14 @@ class SteamSalesEstimator(Wox):
         if review_count_override:
             key_data["review_count"] = review_count_override
 
-        self.currency = key_data["currency"]
+        self.currency = key_data.get("currency")
         self.game_title = key_data["name"]
 
         sales_estimates = self.calculate_estimated_sales(key_data["review_count"], key_data["release_datetime"])
         sales_best_guess = sales_estimates[1]
         self.sales_count = sales_best_guess
+        if "price" not in key_data:
+            return
         return self.calculate_estimated_revenue_range(sales_best_guess, key_data["price"])
 
     def get_app_info(self, app_id):
@@ -156,12 +167,13 @@ class SteamSalesEstimator(Wox):
         data = {
             "release_datetime": datetime.strptime(raw_date_string, "%d %b, %Y"),
             "name": app_info["data"]["name"],
-            # Given in cents, convert to dollars
-            "price": app_info["data"]["price_overview"]["final"] / 100,
-            "currency": app_info["data"]["price_overview"]["currency"]
         }
         if review_count:
             data["review_count"] = review_count
+        if not app_info["data"]["is_free"]:
+            # Given in cents, convert to dollars
+            data["price"] = app_info["data"]["price_overview"]["final"] / 100
+            data["currency"] = app_info["data"]["price_overview"]["currency"]
         return data
 
     def calculate_estimated_sales(self, review_count: int, release_datetime: datetime):
